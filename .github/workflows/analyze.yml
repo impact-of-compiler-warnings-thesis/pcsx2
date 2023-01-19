@@ -1,0 +1,79 @@
+name: SonarCloud
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  build:
+    name: Build and analyze
+    runs-on: ubuntu-latest
+    env:
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v1
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install ninja-build \
+                           ccache \
+                           libclang-dev \
+                           libclang-11-dev \
+                           libclang-12-dev \
+                           patchelf \
+                           libglib2.0-dev \
+                           libfontconfig1-dev"
+                           libharfbuzz-dev \
+                           libjpeg-dev \
+                           libpng-dev \
+                           libfreetype-dev \
+                           libinput-dev \
+                           libxcb-*-dev \
+                           libxkbcommon-dev \
+                           libxkbcommon-x11-dev \
+                           libxrender-dev \
+                           libwayland-dev \
+                           libgl1-mesa-dev \
+                           libegl-dev \
+                           libegl1-mesa-dev \
+                           libgl1-mesa-dev \
+                           libssl-dev \
+                           libaio-dev \
+                           libasound2-dev \
+                           libbz2-dev \
+                           libcurl4-openssl-dev \
+                           libegl1-mesa-dev \
+                           libgl1-mesa-dev \
+                           libgtk-3-dev \
+                           libharfbuzz-dev \
+                           libjpeg-dev \
+                           liblzma-dev \
+                           libpcap0.8-dev \
+                           libpng-dev \
+                           libpulse-dev \
+                           librsvg2-dev \
+                           libsamplerate0-dev \
+                           libsoundtouch-dev \
+                           libudev-dev \
+                           libx11-xcb-dev \
+                           pkg-config \
+                           zlib1g-dev
+      - name: Generate build files
+        run: |
+          mkdir build && cd build
+          cmake .. -GNinja
+      - name: Run build-wrapper
+        run: build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} ninja -C build
+      - name: Run sonar-scanner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
