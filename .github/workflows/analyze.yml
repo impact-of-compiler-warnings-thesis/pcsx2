@@ -17,8 +17,8 @@ jobs:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Install sonar-scanner and build-wrapper
         uses: SonarSource/sonarcloud-github-c-cpp@v1
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+      - name: Init submodules
+        run: git submodule update --init --recursive
       - name: Install dependencies
         run: |
           sudo apt update
@@ -65,6 +65,8 @@ jobs:
                            libx11-xcb-dev \
                            pkg-config \
                            zlib1g-dev
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
       - name: Generate build files
         run: |
           mkdir build && cd build
